@@ -1,0 +1,11 @@
+<script>
+(function(){
+ const SUP='https://xecljhoqlbddzpxdcxmt.supabase.co',KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlY2xqaG9xbGJkZHpweGRjeG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNDg5NDgsImV4cCI6MjEwNDYyNDk0OH0.Hmvf-2rHNBokD6TOGd5w1Rno0EUGnfRRtDiKOkt0-04',END=SUP+'/functions/v1/tracker',q=new URLSearchParams(location.search);
+ let vid=localStorage.getItem('utm_visitor_id');if(!vid){vid=crypto.randomUUID();localStorage.setItem('utm_visitor_id',vid)}
+ let sid=sessionStorage.getItem('utm_session_id');if(!sid){sid=crypto.randomUUID();sessionStorage.setItem('utm_session_id',sid)}
+ const ck=n=>document.cookie.split('; ').find(x=>x.startsWith(n+'='))?.split('=').slice(1).join('=')||null;
+ fetch(END,{headers:{Authorization:'Bearer '+KEY,apikey:KEY}}).then(r=>r.json()).then(j=>{let id=j.pixel?.pixel_id;if(!id||window.fbq)return;!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',id);fbq('track','PageView',{},{eventID:'pv_'+sid})}).catch(()=>{});
+ const data={visitor_id:vid,session_id:sid,event_id:'pv_'+sid,page_url:location.href,landing_page:sessionStorage.getItem('utm_landing')||location.href,referrer:document.referrer||null,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign'),utm_content:q.get('utm_content'),utm_term:q.get('utm_term'),fbclid:q.get('fbclid'),campaign_id:q.get('campaign_id')||q.get('utm_campaign_id'),adset_id:q.get('adset_id')||q.get('utm_adset_id'),ad_id:q.get('ad_id')||q.get('utm_ad_id'),fbp:ck('_fbp'),fbc:ck('_fbc'),event_name:'page_view'};
+ fetch(END,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+KEY,apikey:KEY},body:JSON.stringify(data),keepalive:true}).catch(()=>{});
+})();
+</script>

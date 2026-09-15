@@ -1,0 +1,78 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>UTM Pessoal</title>
+<style>
+body{margin:0;background:#08111f;color:#eef5ff;font-family:system-ui,sans-serif}.wrap{max-width:1500px;margin:auto;padding:16px}.card{background:#101b2d;border:1px solid #22314a;border-radius:16px;padding:16px;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kpi b{display:block;font-size:24px}.muted{color:#8da0b8}button,input,select{background:#0b1627;color:#eef5ff;border:1px solid #22314a;border-radius:10px;padding:10px}button{cursor:pointer}.primary{background:#45e0b5;color:#06211a;border:0;font-weight:800}.facebook{background:#1877f2;border:0;font-weight:800}.toolbar{display:flex;gap:8px;flex-wrap:wrap}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid #22314a;text-align:left;white-space:nowrap}.scroll{overflow:auto}#login{position:fixed;inset:0;background:#08111ff5;display:grid;place-items:center}#login .card{width:min(90vw,400px)}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.tab.active{background:#45e0b5;color:#06211a;border-color:#45e0b5;font-weight:800}
+.metric-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.metric-tools input{min-width:220px}.pos{color:#65e6bd;font-weight:700}.neg{color:#ff8787;font-weight:700}
+.badge{padding:4px 8px;border-radius:999px;background:#17263d;font-size:12px}.metric-title{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:#45e0b5}.small{font-size:12px}.rank{font-weight:800;color:#8da0b8}
+@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.wrap{padding:10px}.metric-tools input{min-width:140px;flex:1}.card{padding:12px}}
+</style></head><body>
+<div id="login"><div class="card"><h2>UTM Pessoal</h2><input id="pw" type="password" placeholder="Senha" style="width:100%"><button class="primary" style="width:100%;margin-top:8px" onclick="doLogin()">Entrar</button><div id="err" style="color:#ff8787"></div></div></div>
+<div class="wrap"><h2>UTM Pessoal</h2><div class="muted">Vendas, Meta Ads, Pixel e Conversions API</div>
+<div class="toolbar" style="margin-top:12px"><input id="from" type="date"><input id="to" type="date"><button class="primary" onclick="loadAll()">Atualizar</button><button onclick="logout()">Sair</button></div>
+<div class="grid">
+<div class="card kpi"><span class="muted">Faturamento</span><b id="revenue">R$ 0,00</b></div>
+<div class="card kpi"><span class="muted">Lucro</span><b id="profit">R$ 0,00</b></div>
+<div class="card kpi"><span class="muted">Vendas</span><b id="sales">0</b></div>
+<div class="card kpi"><span class="muted">Gasto</span><b id="spend">R$ 0,00</b></div>
+<div class="card kpi"><span class="muted">ROAS</span><b id="roas">—</b></div>
+<div class="card kpi"><span class="muted">CPA</span><b id="cpa">—</b></div>
+<div class="card kpi"><span class="muted">Ticket</span><b id="ticket">—</b></div>
+<div class="card kpi"><span class="muted">Cliques</span><b id="clicks">0</b></div>
+</div>
+<div class="card"><h3>Meta Ads + Pixel</h3><div class="toolbar"><button class="facebook" onclick="connectMeta()">Conectar Facebook</button><button onclick="syncMeta()">Sincronizar Meta</button><button onclick="sendCapi()">Enviar fila CAPI</button></div><p>Conta: <b id="account">—</b></p><p>Pixel: <select id="pixel" onchange="choosePixel()"><option value="">Nenhum</option></select></p><p>CAPI enviados: <b id="sent">0</b> · Em fila: <b id="queued">0</b></p><p>API: <b id="version">v26.0</b></p></div>
+
+<div class="card">
+  <div class="metric-title">
+    <div><h3 style="margin-bottom:4px">Métricas de campanhas e criativos</h3><div class="muted small">Meta Ads + vendas atribuídas pela Cakto</div></div>
+    <div class="metric-tools"><input id="metricSearch" placeholder="Buscar campanha, conjunto ou anúncio..." oninput="renderMetrics()"><select id="metricSort" onchange="renderMetrics()"><option value="spend">Maior gasto</option><option value="sales">Mais vendas</option><option value="revenue">Maior faturamento</option><option value="roas">Maior ROAS</option><option value="profit">Maior lucro</option><option value="ctr">Maior CTR</option><option value="cpa">Menor CPA</option></select></div>
+  </div>
+  <div class="tabs"><button class="tab active" data-level="campaign" onclick="setMetricLevel('campaign',this)">Campanhas</button><button class="tab" data-level="adset" onclick="setMetricLevel('adset',this)">Conjuntos</button><button class="tab" data-level="ad" onclick="setMetricLevel('ad',this)">Anúncios / Criativos</button></div>
+  <div class="scroll"><table><thead><tr>
+    <th>#</th><th id="nameHead">Campanha</th>
+    <th class="sortable" onclick="sortMetric('spend')">Gasto ↕</th><th>Impressões</th><th>Alcance</th><th>Cliques</th>
+    <th class="sortable" onclick="sortMetric('cpm')">CPM ↕</th><th class="sortable" onclick="sortMetric('cpc')">CPC ↕</th><th class="sortable" onclick="sortMetric('ctr')">CTR ↕</th>
+    <th class="sortable" onclick="sortMetric('sales')">Vendas ↕</th><th class="sortable" onclick="sortMetric('revenue')">Faturamento ↕</th>
+    <th class="sortable" onclick="sortMetric('cpa')">CPA ↕</th><th class="sortable" onclick="sortMetric('roas')">ROAS ↕</th><th class="sortable" onclick="sortMetric('profit')">Lucro ↕</th><th>Conversão</th>
+  </tr></thead><tbody id="metricRows"><tr><td colspan="15">Carregando métricas...</td></tr></tbody></table></div>
+</div>
+
+<div class="card"><h3>Vendas recentes</h3><div class="scroll"><table><thead><tr><th>Data</th><th>Produto</th><th>Status</th><th>Valor</th><th>Origem</th><th>Campanha</th><th>Anúncio</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+</div>
+<script>
+const SUP='https://xecljhoqlbddzpxdcxmt.supabase.co',KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlY2xqaG9xbGJkZHpweGRjeG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNDg5NDgsImV4cCI6MjEwNDYyNDk0OH0.Hmvf-2rHNBokD6TOGd5w1Rno0EUGnfRRtDiKOkt0-04',API=SUP+'/functions/v1/dashboard-api',CONNECT=SUP+'/functions/v1/meta-connect',SYNC=SUP+'/functions/v1/meta-sync',CAPI=SUP+'/functions/v1/meta-capi';let token=localStorage.getItem('utm_token')||'';
+const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
+async function call(url,b){let r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY,'apikey':KEY},body:JSON.stringify(b)});let j=await r.json();if(!r.ok)throw new Error(j.error||j.message||'Erro');return j}
+const api=(action,e={})=>call(API,{action,token,...e});
+async function doLogin(){try{let j=await call(API,{action:'login',password:pw.value});token=j.token;localStorage.setItem('utm_token',token);login.style.display='none';loadAll()}catch(e){err.textContent='Senha incorreta'}}
+function logout(){localStorage.removeItem('utm_token');location.reload()}
+
+let metricLevel='campaign', metricData={campaign:[],adset:[],ad:[]}, metricSales=[];
+const pct=v=>(Number(v||0)).toFixed(2)+'%';
+const num=v=>new Intl.NumberFormat('pt-BR').format(Number(v||0));
+function setMetricLevel(level,btn){metricLevel=level;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');nameHead.textContent=level==='campaign'?'Campanha':level==='adset'?'Conjunto':'Anúncio / Criativo';renderMetrics()}
+function sortMetric(k){metricSort.value=k;renderMetrics()}
+function buildMetrics(meta,salesRows){
+ const spend=meta.spend||[], campaigns=Object.fromEntries((meta.campaigns||[]).map(x=>[x.campaign_id,x])), adsets=Object.fromEntries((meta.adsets||[]).map(x=>[x.adset_id,x])), ads=Object.fromEntries((meta.ads||[]).map(x=>[x.ad_id,x]));
+ function agg(level){
+  const map=new Map();
+  const keyOf=x=>level==='campaign'?x.campaign_id:level==='adset'?x.adset_id:x.ad_id;
+  const nameOf=(x,k)=>level==='campaign'?(campaigns[k]?.name||x.campaign||k||'Sem campanha'):level==='adset'?(adsets[k]?.name||x.adset||k||'Sem conjunto'):(ads[k]?.name||x.ad||k||'Sem anúncio');
+  for(const x of spend){const k=keyOf(x);if(!k)continue;let r=map.get(k)||{id:k,name:nameOf(x,k),spend:0,impressions:0,reach:0,clicks:0,sales:0,revenue:0,net:0,refunds:0,creative_id:ads[k]?.creative_id||null};r.spend+=+x.amount||0;r.impressions+=+x.impressions||0;r.reach+=+x.reach||0;r.clicks+=+x.clicks||0;map.set(k,r)}
+  for(const s of salesRows){if(s.status!=='approved')continue;const k=level==='campaign'?s.campaign_id:level==='adset'?s.adset_id:s.ad_id;if(!k)continue;let r=map.get(k)||{id:k,name:level==='campaign'?(campaigns[k]?.name||s.utm_campaign||k):level==='adset'?(adsets[k]?.name||k):(ads[k]?.name||k),spend:0,impressions:0,reach:0,clicks:0,sales:0,revenue:0,net:0,refunds:0,creative_id:ads[k]?.creative_id||null};r.sales++;r.revenue+=+s.amount||0;r.net+=(+s.amount||0)-(+s.fee||0)-(+s.refund||0);r.refunds+=+s.refund||0;map.set(k,r)}
+  return [...map.values()].map(r=>({...r,cpm:r.impressions?r.spend*1000/r.impressions:0,cpc:r.clicks?r.spend/r.clicks:0,ctr:r.impressions?r.clicks*100/r.impressions:0,cpa:r.sales?r.spend/r.sales:null,roas:r.spend?r.revenue/r.spend:null,profit:r.net-r.spend,conversion:r.clicks?r.sales*100/r.clicks:0}));
+ }
+ metricData={campaign:agg('campaign'),adset:agg('adset'),ad:agg('ad')}; renderMetrics();
+}
+function renderMetrics(){
+ let arr=[...(metricData[metricLevel]||[])],q=(metricSearch?.value||'').toLowerCase(),sort=metricSort?.value||'spend';if(q)arr=arr.filter(x=>(x.name+' '+x.id+' '+(x.creative_id||'')).toLowerCase().includes(q));
+ arr.sort((a,b)=>sort==='cpa'?(a.cpa==null?1e99:a.cpa)-(b.cpa==null?1e99:b.cpa):(Number(b[sort]??-1)-Number(a[sort]??-1)));
+ metricRows.innerHTML=arr.map((x,i)=>`<tr><td class="rank">${i+1}</td><td><b>${x.name}</b>${metricLevel==='ad'&&x.creative_id?`<div class="muted small">Criativo ${x.creative_id}</div>`:''}<div class="muted small">${x.id}</div></td><td>${money(x.spend)}</td><td>${num(x.impressions)}</td><td>${num(x.reach)}</td><td>${num(x.clicks)}</td><td>${money(x.cpm)}</td><td>${money(x.cpc)}</td><td>${pct(x.ctr)}</td><td><b>${x.sales}</b></td><td>${money(x.revenue)}</td><td>${x.cpa==null?'—':money(x.cpa)}</td><td class="${x.roas!=null&&x.roas>=1?'pos':''}">${x.roas==null?'—':x.roas.toFixed(2)+'x'}</td><td class="${x.profit>=0?'pos':'neg'}">${money(x.profit)}</td><td>${pct(x.conversion)}</td></tr>`).join('')||'<tr><td colspan="15">Nenhuma métrica encontrada nesse período.</td></tr>';
+}
+
+async function loadAll(){try{let r={from:from.value,to:to.value},[s,v,m,a]=await Promise.all([api('summary',r),api('sales',r),api('meta_status'),api('ads',r)]);let t=s.total;revenue.textContent=money(t.revenue);profit.textContent=money(t.profit);sales.textContent=t.sales;spend.textContent=money(t.spend);roas.textContent=t.roas==null?'—':t.roas.toFixed(2)+'x';cpa.textContent=t.cpa==null?'—':money(t.cpa);ticket.textContent=t.ticket==null?'—':money(t.ticket);clicks.textContent=t.clicks||0;account.textContent=(m.accounts||[]).map(x=>x.name||x.account_id).join(', ')||'—';version.textContent=m.graph_version||'v26.0';sent.textContent=m.events?.sent||0;queued.textContent=m.events?.queued||0;pixel.innerHTML='<option value="">Nenhum</option>'+(m.pixels||[]).map(x=>`<option value="${x.pixel_id}" ${x.selected?'selected':''}>${x.name||'Pixel'} — ${x.pixel_id}</option>`).join('');rows.innerHTML=(v.sales||[]).map(x=>`<tr><td>${new Date(x.sold_at).toLocaleString('pt-BR')}</td><td>${x.product||'—'}</td><td>${x.status}</td><td>${money(x.amount)}</td><td>${x.utm_source||'—'}</td><td>${x.utm_campaign||'—'}</td><td>${x.ad_id||'—'}</td></tr>`).join('')||'<tr><td colspan="7">Nenhuma venda ainda.</td></tr>';buildMetrics(a,v.sales||[])}catch(e){console.error(e);alert('Erro ao carregar painel: '+e.message)}}
+async function connectMeta(){try{let j=await call(CONNECT,{dashboard_token:token});window.open(j.authorize_url,'metaOAuth','width=600,height=760')}catch(e){alert(e.message==='meta_app_not_configured'?'Falta configurar App ID/App Secret da Meta no Supabase.':e.message)}}
+async function syncMeta(){try{let j=await call(SYNC,{dashboard_token:token});alert(`Sincronizado: ${j.accounts} conta(s), ${j.campaigns} campanha(s), ${j.ads} anúncio(s), ${j.pixels} pixel(s)`);loadAll()}catch(e){alert(e.message)}}
+async function sendCapi(){try{let j=await call(CAPI,{dashboard_token:token,limit:100});alert(`CAPI: ${j.sent} enviado(s), ${j.failed} falha(s)`);loadAll()}catch(e){alert(e.message)}}
+async function choosePixel(){if(pixel.value){await api('select_pixel',{pixel_id:pixel.value});loadAll()}}
+let d=new Date(),p=new Date(Date.now()-29*86400000);to.value=d.toISOString().slice(0,10);from.value=p.toISOString().slice(0,10);if(token){login.style.display='none';loadAll()}
+</script></body></html>

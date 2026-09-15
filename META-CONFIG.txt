@@ -1,0 +1,12 @@
+Configure estes Edge Function Secrets no projeto Supabase UTM Pessoal:
+
+META_APP_ID=1711368520045742
+META_APP_SECRET=f046cfe1c1e60af9f9562dddcf0eaec9
+META_GRAPH_VERSION=v26.0
+META_REDIRECT_URI=https://xecljhoqlbddzpxdcxmt.supabase.co/functions/v1/meta-connect?mode=callback
+
+Opcionais:
+META_CAPI_ACCESS_TOKEN=<token específico da Conversions API>
+META_TEST_EVENT_CODE=<código de teste do Events Manager>
+
+No app da Meta, use a mesma META_REDIRECT_URI como OAuth Redirect URI válido.
